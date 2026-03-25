@@ -1,0 +1,1 @@
+Basic text editor built with Avalonia for learning
