@@ -3,12 +3,19 @@
         xmlns:vm="using:texteditor.ViewModels"
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:models="using:texteditor.Models"
         mc:Ignorable="d" d:DesignWidth="800" d:DesignHeight="450"
         x:Class="texteditor.Views.MainWindow"
         x:DataType="vm:MainWindowViewModel"
         Icon="/Assets/avalonia-logo.ico"
         Title="texteditor"
         Width="800" Height="600">
+
+    <Window.Styles>
+        <Style Selector="MenuItem:disabled">
+            <Setter Property="Opacity" Value="0.5"/>
+        </Style>
+    </Window.Styles>
 
     <Design.DataContext>
         <vm:MainWindowViewModel/>
@@ -22,11 +29,24 @@
 
         <Menu Grid.Row="0">
             <MenuItem Header="File">
-                <MenuItem Header="Save" Command="{Binding SaveCommand}"/>
-                <MenuItem Header="Load" Command="{Binding LoadCommand}"/>
+                <MenuItem Header="New" Command="{Binding NewDocumentCommand}"/>
+                <MenuItem Header="Open" Command="{Binding OpenDocumentCommand}"/>
+                <MenuItem Header="Save" Command="{Binding SaveDocumentCommand}"/>
+                <MenuItem Header="Save As" Command="{Binding SaveAsDocumentCommand}"/>
+                <MenuItem Header="Close" Command="{Binding CloseDocumentCommand}"/>
             </MenuItem>
         </Menu>
-
-        <TextBox Grid.Row="1" Text="{Binding Text, Mode=TwoWay}" AcceptsReturn="True" />
+        <TabControl Grid.Row="1" ItemsSource="{Binding Documents}" SelectedIndex="{Binding SelectedDocumentIndex}">
+            <TabControl.ItemTemplate>
+                <DataTemplate DataType="models:Document">
+                    <TextBlock Text="{Binding Title}"/>
+                </DataTemplate>
+            </TabControl.ItemTemplate>
+            <TabControl.ContentTemplate>
+                <DataTemplate DataType="models:Document">
+                    <TextBox Text="{Binding Text, Mode=TwoWay}" AcceptsReturn="True"/>
+                </DataTemplate>
+            </TabControl.ContentTemplate>
+        </TabControl>
     </Grid>
 </Window>

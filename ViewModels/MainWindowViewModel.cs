@@ -4,45 +4,45 @@ using System.IO;
 using Avalonia.Platform.Storage;
 using Avalonia.Controls;
 using System.Collections.Generic;
+using System.Collections.ObjectModel;
+using CommunityToolkit.Mvvm.ComponentModel;
+using texteditor.Models;
 
 namespace texteditor.ViewModels {
 	public partial class MainWindowViewModel : ViewModelBase {
-		private readonly TextEditorModel model = new();
-		private readonly Window window;
+		[ObservableProperty] private ObservableCollection<Document> documents = new();
+		[ObservableProperty] private int selectedDocumentIndex = -1;
+		[ObservableProperty] private Window window;
 
-		public string Text {
-			get => model.Text;
-			set {
-				model.Text = value;
-				OnPropertyChanged();
-			}
-		}
-
-		public ICommand SaveCommand { get; }
-		public ICommand LoadCommand { get; }
+		public RelayCommand NewDocumentCommand { get; }
+		public RelayCommand OpenDocumentCommand { get; }
+		public RelayCommand CloseDocumentCommand { get; }
+		public RelayCommand SaveDocumentCommand { get; }
+		public RelayCommand SaveAsDocumentCommand { get; }
 
 		public MainWindowViewModel(Window window) {
 			this.window = window;
-			SaveCommand = new RelayCommand(_ => SaveFile());
-			LoadCommand = new RelayCommand(_ => LoadFile());
+			NewDocumentCommand = new RelayCommand(_ => NewDocument());
+			OpenDocumentCommand = new RelayCommand(_ => OpenDocument());
+			SaveDocumentCommand = new RelayCommand(_ => SaveDocument(), _ => SelectedDocumentIndex >= 0);
+			SaveAsDocumentCommand = new RelayCommand(_ => SaveAsDocument(), _ => SelectedDocumentIndex >= 0);
+			CloseDocumentCommand = new RelayCommand(_ => CloseDocument(), _ => SelectedDocumentIndex >= 0);
+		
+			NewDocument();
 		}
 
-		private async void SaveFile() {
-			FilePickerSaveOptions options = new FilePickerSaveOptions {
-				Title = "Save File",
-				FileTypeChoices = new[] {
-					new FilePickerFileType("Text File") {
-						Patterns = new[] { "*.txt" }
-					}
-				}
-			};
-
-			IStorageFile? result = await window.StorageProvider.SaveFilePickerAsync(options);
-			if (result != null)
-				await File.WriteAllTextAsync(result.Path.LocalPath, Text);
+		partial void OnSelectedDocumentIndexChanged(int value) {
+			SaveDocumentCommand.RaiseCanExecuteChanged();
+			SaveAsDocumentCommand.RaiseCanExecuteChanged();
+			CloseDocumentCommand.RaiseCanExecuteChanged();
 		}
 
-		private async void LoadFile() {
+		private void NewDocument() {
+			Documents.Add(new Document());
+			SelectedDocumentIndex = Documents.Count - 1;
+		}
+
+		private async void OpenDocument() {
 			var options = new FilePickerOpenOptions {
 				Title = "Load File",
 				FileTypeFilter = new[] {
@@ -52,9 +52,61 @@ namespace texteditor.ViewModels {
 				}
 			};
 
-			IReadOnlyList<IStorageFile> result = await window.StorageProvider.OpenFilePickerAsync(options);
-			if (result.Count > 0)
-				Text = await File.ReadAllTextAsync(result[0].Path.AbsolutePath);
+			IReadOnlyList<IStorageFile> result = await Window.StorageProvider.OpenFilePickerAsync(options);
+			foreach (IStorageFile file in result) {
+				Document newDoc = new() {
+					Title = file.Name,
+					Text = await File.ReadAllTextAsync(result[0].Path.AbsolutePath)
+				};
+				Documents.Add(newDoc);
+				SelectedDocumentIndex = Documents.Count - 1;
+			}
+		}
+
+		private async void SaveDocument() {
+			string path = Documents[SelectedDocumentIndex].Path;
+			if (path == string.Empty || Path.Exists(path)) {
+				SaveAsDocument();
+				return;
+			}
+
+			FilePickerSaveOptions options = new FilePickerSaveOptions {
+				Title = "Save File",
+				FileTypeChoices = new[] {
+					new FilePickerFileType("Text File") {
+						Patterns = new[] { "*.txt" }
+					}
+				}
+			};
+
+			IStorageFile? result = await Window.StorageProvider.SaveFilePickerAsync(options);
+			if (result != null)
+				await File.WriteAllTextAsync(result.Path.LocalPath, Documents[SelectedDocumentIndex].Text);
+		}
+
+		private async void SaveAsDocument() {
+			FilePickerSaveOptions options = new FilePickerSaveOptions {
+				Title = "Save As File",
+				FileTypeChoices = new[] {
+					new FilePickerFileType("Text File") {
+						Patterns = new[] { "*.txt" }
+					}
+				}
+			};
+
+			IStorageFile? result = await Window.StorageProvider.SaveFilePickerAsync(options);
+			if (result != null) {
+				Documents[SelectedDocumentIndex].Title = result.Name;
+				await File.WriteAllTextAsync(result.Path.LocalPath, Documents[SelectedDocumentIndex].Text);
+			}
+		}
+
+		private void CloseDocument() {
+			Documents.RemoveAt(SelectedDocumentIndex);
+			SelectedDocumentIndex = Math.Max(0, Math.Min(SelectedDocumentIndex, Documents.Count - 1));
+		
+			if (Documents.Count == 0)
+				SelectedDocumentIndex = -1;
 		}
 	}
 
@@ -71,5 +123,9 @@ namespace texteditor.ViewModels {
 		public void Execute(object? param) => execute(param);
 
 		public event EventHandler? CanExecuteChanged;
+
+		public void RaiseCanExecuteChanged() {
+			CanExecuteChanged?.Invoke(this, EventArgs.Empty);
+		}
 	}
 }
