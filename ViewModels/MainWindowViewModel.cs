@@ -19,6 +19,8 @@ namespace texteditor.ViewModels {
 		public RelayCommand CloseDocumentCommand { get; }
 		public RelayCommand SaveDocumentCommand { get; }
 		public RelayCommand SaveAsDocumentCommand { get; }
+		public RelayCommand UndoCommand { get; }
+		public RelayCommand RedoCommand { get; }
 
 		public MainWindowViewModel(Window window) {
 			this.window = window;
@@ -27,7 +29,9 @@ namespace texteditor.ViewModels {
 			SaveDocumentCommand = new RelayCommand(_ => SaveDocument(), _ => SelectedDocumentIndex >= 0);
 			SaveAsDocumentCommand = new RelayCommand(_ => SaveAsDocument(), _ => SelectedDocumentIndex >= 0);
 			CloseDocumentCommand = new RelayCommand(_ => CloseDocument(), _ => SelectedDocumentIndex >= 0);
-		
+			UndoCommand = new RelayCommand(_ => Documents[SelectedDocumentIndex].Undo(), _ => SelectedDocumentIndex >= 0 && Documents[SelectedDocumentIndex].UndoStackCount > 0);
+			RedoCommand = new RelayCommand(_ => Documents[SelectedDocumentIndex].Redo(), _ => SelectedDocumentIndex >= 0 && Documents[SelectedDocumentIndex].RedoStackCount > 0);
+
 			NewDocument();
 		}
 

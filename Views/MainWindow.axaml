@@ -35,6 +35,10 @@
                 <MenuItem Header="Save As" Command="{Binding SaveAsDocumentCommand}"/>
                 <MenuItem Header="Close" Command="{Binding CloseDocumentCommand}"/>
             </MenuItem>
+            <MenuItem Header="Edit">
+                <MenuItem Header="Undo" Command="{Binding UndoCommand}"/>
+                <MenuItem Header="Redo" Command="{Binding RedoCommand}"/>
+            </MenuItem>
         </Menu>
         <TabControl Grid.Row="1" ItemsSource="{Binding Documents}" SelectedIndex="{Binding SelectedDocumentIndex}">
             <TabControl.ItemTemplate>
@@ -44,7 +48,7 @@
             </TabControl.ItemTemplate>
             <TabControl.ContentTemplate>
                 <DataTemplate DataType="models:Document">
-                    <TextBox Text="{Binding Text, Mode=TwoWay}" AcceptsReturn="True"/>
+                    <TextBox Text="{Binding Text, Mode=TwoWay}" CaretIndex="{Binding CaretPosition, Mode=TwoWay}" AcceptsReturn="True"/>
                 </DataTemplate>
             </TabControl.ContentTemplate>
         </TabControl>
