@@ -58,6 +58,7 @@ namespace texteditor.ViewModels {
 					Title = file.Name,
 					Text = await File.ReadAllTextAsync(result[0].Path.AbsolutePath)
 				};
+				newDoc.ResetDirty();
 				Documents.Add(newDoc);
 				SelectedDocumentIndex = Documents.Count - 1;
 			}
@@ -80,8 +81,10 @@ namespace texteditor.ViewModels {
 			};
 
 			IStorageFile? result = await Window.StorageProvider.SaveFilePickerAsync(options);
-			if (result != null)
+			if (result != null) {
 				await File.WriteAllTextAsync(result.Path.LocalPath, Documents[SelectedDocumentIndex].Text);
+				Documents[SelectedDocumentIndex].ResetDirty();
+			}
 		}
 
 		private async void SaveAsDocument() {
@@ -98,6 +101,7 @@ namespace texteditor.ViewModels {
 			if (result != null) {
 				Documents[SelectedDocumentIndex].Title = result.Name;
 				await File.WriteAllTextAsync(result.Path.LocalPath, Documents[SelectedDocumentIndex].Text);
+				Documents[SelectedDocumentIndex].ResetDirty();
 			}
 		}
 
